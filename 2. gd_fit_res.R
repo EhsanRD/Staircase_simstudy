@@ -70,7 +70,6 @@ gen_data <- function(S, K, m, ICC, CAC, theta){
   #Y0 <-  betavec + Xvec*0 + Cvec + CPvec + e
   
   # Create data frame with everything needed for fitting the model
-  #dat <- data.frame(Y=Y, Y0=Y0, cluster=as.factor(clusterind), time=perind, clustper=as.factor(clustperind), treat=Xvec)
   dat <- data.frame(Y=Y, cluster=as.factor(clusterind), time=perind, clustper=as.factor(clustperind), treat=Xvec)
   # Get subset of data corresponding to embedded basic staircase design
 
