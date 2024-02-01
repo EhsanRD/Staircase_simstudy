@@ -231,8 +231,8 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta){
   #tstat_BE <- qt(alpha, dof)
   zstat_HH <- qnorm(alpha)
   #count the number of intervals that contain the true values.
-  num_cov_HH <- sum(res_fit$est_trt_HH-(zstat_HH*res_fit$se_trt_HH) <= theta 
-                  & res_fit$est_trt_HH+(zstat_HH*res_fit$se_trt_HH) >= theta) 
+  num_cov_HH <- sum(res_fit$est_trt_HH-zstat_HH*(res_fit$se_trt_HH) <= theta 
+                  & res_fit$est_trt_HH+zstat_HH*(res_fit$se_trt_HH) >= theta) 
   p_cov_HH <- num_cov_HH/nsim_HH
   
   #Get t test statistic with KR-adjusted ddf
