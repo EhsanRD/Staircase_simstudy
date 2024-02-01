@@ -7,6 +7,7 @@ library(MASS)
 library(lme4)
 library(glmmTMB)
 library(pbkrtest)
+library(tidyr)
 
 
 setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
@@ -42,7 +43,7 @@ gen_data <- function(S, K, m, ICC, CAC, theta){
   # Get vector of treatment effect indicators from given design matrix
   SCdes <- SCdesmat(S,K,1,1)
   XvecSC <- rep(as.vector(t(SCdes)), each=m)
-  Xvec<-XvecSC[!is.na(XvecSC)]
+  Xvec <- XvecSC[!is.na(XvecSC)]
   #need to be updated
   
   # Set up indices for cluster, cluster-period, and period
@@ -67,10 +68,12 @@ gen_data <- function(S, K, m, ICC, CAC, theta){
   # Combine terms to get outcome data for SC design
   
   Y  <-  betavec + Xvec*theta + Cvec + CPvec + e
+  #inactive zero treatment effect statements and delete them later after Jess's thoughts on this
   #Y0 <-  betavec + Xvec*0 + Cvec + CPvec + e
   
   # Create data frame with everything needed for fitting the model
   dat <- data.frame(Y=Y, cluster=as.factor(clusterind), time=perind, clustper=as.factor(clustperind), treat=Xvec)
+  #dat <- data.frame(Y=Y, Y_0=Y0, cluster=as.factor(clusterind), time=perind, clustper=as.factor(clustperind), treat=Xvec)
   # Get subset of data corresponding to embedded basic staircase design
 
   return(dat)
@@ -129,16 +132,18 @@ fitmodels <- function(S, K, m, ICC, CAC, theta){
   
   # Generate dataset
   dat <- gen_data(S, K, m, ICC, CAC, theta)
-  #dat <- gen_data(5, 100, 50, 0.01, 0.5, 0.15)
+  #dat <- gen_data(10, 1, 100, 0.01, 0.95,0.15)
   
   # Fit both models
   remlfit_HH   <- lmer(Y ~ treat + as.factor(time) + (1|cluster), data=dat, REML=TRUE)
-  est_HH   <- fixef(remlfit_HH)['treat']
-  se_HH    <- sqrt(vcov(remlfit_HH)['treat','treat'])
+  est_trt_HH   <- fixef(remlfit_HH)['treat']
+  se_trt_HH    <- sqrt(vcov(remlfit_HH)['treat','treat'])
+  # Extract the number of parameters
+  #num_par_HH <- length(unlist(lme4::fixef(remlfit_HH))) + length(unlist(lme4::ranef(remlfit_HH)))
   
   estvarclustr_HH <- VarCorr(remlfit_HH)$cluster[1]
   estvarres_HH     <- sigma(remlfit_HH)^2
-  estICC_HH  <- (estvarclustr_HH)/(estvarclustr_HH+estvarres_HH)
+  est_ICC_HH  <- (estvarclustr_HH)/(estvarclustr_HH+estvarres_HH)
 
   # remlfit0_HH  <- lmer(Y0 ~ treat +  as.factor(time)  + (1|cluster), data=dat, REML=TRUE)
   # est0_HH  <- fixef(remlfit0_HH)['treat']
@@ -148,22 +153,15 @@ fitmodels <- function(S, K, m, ICC, CAC, theta){
   # estvarres0_HH      <-  sigma(remlfit0_HH)^2
   # estICC0_HH <- (estvarclustr0_HH)/(estvarclustr0_HH+estvarres0_HH)
 
-
-  #glmfit <- glmmTMB(Y ~ treat + time + (1|cluster) + (1|clustper), data=dat, REML=TRUE)
   remlfit_BE    <- fitBEmodelSC(dat)
-  #estSC_BE   <- ifelse(is.null(remlfit_BE), NA, fixef(remlfit_BE)[[1]]['treat'])
-  est_BE    <- ifelse(is.null(remlfit_BE), NA, fixef(remlfit_BE)['treat'])
-  #seSC_BE    <- ifelse(is.null(remlfit_BE), NA, getSE(remlfit_BE))
-  se_BE     <- ifelse(is.null(remlfit_BE), NA, sqrt(vcov(remlfit_BE)['treat','treat']))
-  
-  #estvarclustr_BE   <- ifelse(is.null(remlfit_BE), NA, VarCorr(remlfit_BE)[[c("cond","cluster")]][1]) 
+  est_trt_BE    <- ifelse(is.null(remlfit_BE), NA, fixef(remlfit_BE)['treat'])
+  se_trt_BE     <- ifelse(is.null(remlfit_BE), NA, sqrt(vcov(remlfit_BE)['treat','treat']))
+
   estvarclustr_BE   <- ifelse(is.null(remlfit_BE), NA, VarCorr(remlfit_BE)$cluster[1])
-  #estvarclustper_BE <- ifelse(is.null(remlfit_BE), NA, VarCorr(remlfit_BE)[[c("cond","clustper")]][1]) 
   estvarclustper_BE <- ifelse(is.null(remlfit_BE), NA, VarCorr(remlfit_BE)$clustper[1]) 
-  #estvarres_BE      <- ifelse(is.null(remlfit_BE), NA, attr(VarCorr(remlfit_BE)$cond, "sc")^2)
   estvarres_BE      <- ifelse(is.null(remlfit_BE), NA, sigma(remlfit_BE)^2)
-  estICC_BE <- (estvarclustr_BE+estvarclustper_BE)/(estvarclustr_BE+estvarclustper_BE+estvarres_BE)
-  estCAC_BE <- (estvarclustr_BE)/(estvarclustr_BE+estvarclustper_BE)
+  est_ICC_BE <- (estvarclustr_BE+estvarclustper_BE)/(estvarclustr_BE+estvarclustper_BE+estvarres_BE)
+  est_CAC_BE <- (estvarclustr_BE)/(estvarclustr_BE+estvarclustper_BE)
 
   # #glmfit0      <- glmmTMB(Y0 ~ treat + time + (1|cluster) + (1|clustper), data=dat, REML=TRUE)
   # remlfit0_BE    <- fitBEmodelSC0(dat)
@@ -193,49 +191,54 @@ fitmodels <- function(S, K, m, ICC, CAC, theta){
    vcov0_BE<- vcov(remlfit_BE)
    vcovKR_BE <- vcovAdj(remlfit_BE)
    adj_se_BE <- sqrt(vcovKR_BE['treat','treat'])
-   #??????????????????????????????????????
    L2 <- rep(0, length(fixef(remlfit_BE)))
    L2[which(names(fixef(remlfit_BE))=='treat')] <- 1
    adj_ddf_BE <- Lb_ddf(L2, vcov0_BE, vcovKR_BE)
    
-  return(c(est_HH, se_HH, est0_HH, se0_HH,
-           est_BE, se_BE, est0_BE, se0_BE,
-           estICC_HH, estICC0_HH, estICC_BE,estICC0_BE,
-           estCAC_BE,estCAC0_BE, adj_se_HH,adj_ddf_HH,
-           adj_se_BE,adj_ddf_BE))
+  return(c(est_trt_HH, se_trt_HH,est_trt_BE, se_trt_BE, 
+           est_ICC_HH, est_ICC_BE, est_CAC_BE, 
+           adj_se_HH,adj_ddf_HH,adj_se_BE,adj_ddf_BE))
 }
 
-sim_res <- function(nsim, S, K, m, ICC, CAC, theta){
+sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta){
   # Calculates empirical power based on nsim simulated trial datasets
   
   # Generate trial dataset, fit both models, calculate rejection probability
-  res <- replicate(nsim, fitmodels(S, K, m, ICC, CAC, theta))
-  #res <- replicate(20, fitmodels(10, 1, 100, 0.05, 0.8, 0.05))
-  
+  res_fit_matx <- replicate(nsim, fitmodels(S, K, m, ICC, CAC, theta))
+  #res_fit_matx <- replicate(5, fitmodels(10, 1, 100, 0.01, 0.95, 0.15))
+  res_fit_matx_t <-  t(res_fit_matx)
   
   #create a data frame convert res matrix to a data frame
-  
+  res_fit <- as.data.frame(res_fit_matx_t)
+  colnames(res_fit) <- c("est_trt_HH", "se_trt_HH", "est_trt_BE", "se_trt_BE", 
+                        "est_ICC_HH", "est_ICC_BE", "est_CAC_BE", 
+                        "adj_se_HH", "adj_ddf_HH", "adj_se_BE", "adj_ddf_BE")
+
   
   #Calculate rejection proportion for empirical power
   #the proportion of times the test rejects the null hypothesis in the study.
   
-  nsim_HH  <- sum(!is.na(abs(res[1,])/res[2,] > 1.96))
-  pwr_HH   <- sum(abs(res[1,])/res[2,] > 1.96, na.rm=TRUE)/nsim_HH
-  varest_HH<- var(res[1,], na.rm=TRUE)
-  mest_HH  <- mean(res[1,], na.rm=TRUE)
-  mestICC_HH <- mean(res[9,], na.rm=TRUE)
-  varICC_HH  <- var(res[9,], na.rm=TRUE)
+  nsim_HH  <- sum(!is.na(abs(res_fit$est_trt_HH)/res_fit$se_trt_HH > 1.96))
+  pwr_HH   <- sum(abs(res_fit$est_trt_HH)/res_fit$se_trt_HH > 1.96, na.rm=TRUE)/nsim_HH
+  varest_trt_HH<- var(res_fit$est_trt_HH, na.rm=TRUE)
+  mest_trt_HH  <- mean(res_fit$est_trt_HH, na.rm=TRUE)
+  mest_ICC_HH <- mean(res_fit$est_ICC_HH, na.rm=TRUE)
+  varICC_HH  <- var(res_fit$est_ICC_HH, na.rm=TRUE)
   
-  #Coverage &Construct 95%  confidence intervals
+  #Coverage 
   alpha <- (1 + 0.95)/2
-  tstat_HH <- qt(alpha, nsim_HH)
-  num_cov_HH <- sum(abs(res[1,])-tstat_HH*sqrt(varest_HH/(nsim_HH-1)) <= theta & abs(res[1,])+tstat_HH*sqrt(varest_HH/(nsim_HH-1)) >= theta) 
+  #dof: number of clusters minus the number of regression parameters (Fan Li 2020)? K*S-(T+1) (Fan Li 2018) ? or m*S*K*T-S*K-T (Grayling et al 2017)?
+  #tstat_BE <- qt(alpha, dof)
+  zstat_HH <- qnorm(alpha)
+  #count the number of intervals that contain the true values.
+  num_cov_HH <- sum(res_fit$est_trt_HH-(zstat_HH*res_fit$se_trt_HH) <= theta 
+                  & res_fit$est_trt_HH+(zstat_HH*res_fit$se_trt_HH) >= theta) 
   p_cov_HH <- num_cov_HH/nsim_HH
   
   #Get t test statistic with KR-adjusted ddf
-  tstat_KR_HH <- qt(alpha, res[16,])
-  nsim_KR_HH  <- sum(!is.na(abs(res[1,])/res[15,] > tstat_KR_HH))
-  pwr_KR_HH <- sum(abs(res[1,])/res[15,] > tstat_KR_HH)/nsim_KR_HH
+  tstat_KR_HH <- qt(alpha, res_fit$adj_ddf_HH)
+  nsim_KR_HH  <- sum(!is.na(abs(res_fit$est_trt_HH)/res_fit$adj_se_HH > tstat_KR_HH))
+  pwr_KR_HH <- sum(abs(res_fit$est_trt_HH)/res_fit$adj_se_HH > tstat_KR_HH)/nsim_KR_HH
   
   # # Construct 95% KR confidence intervals
   # theta_CI_KR_low  <- REML_theta_est - tstatSC * adj_SE
@@ -252,24 +255,27 @@ sim_res <- function(nsim, S, K, m, ICC, CAC, theta){
   # mestICC0_HH <- mean(res[10,], na.rm=TRUE)
   # varICC0_HH  <- var(res[10,], na.rm=TRUE)
   
-  nsim_BE  <- sum(!is.na(abs(res[5,])/res[6,] > 1.96))
-  pwr_BE   <- sum(abs(res[5,])/res[6,] > 1.96, na.rm=TRUE)/nsim_BE
-  varest_BE<- var(res[5,], na.rm=TRUE)
-  mest_BE  <- mean(res[5,], na.rm=TRUE)
-  mestICC_BE <- mean(res[11,], na.rm=TRUE)
-  varICC_BE  <- var(res[11,], na.rm=TRUE)
-  mestCAC_BE <-  mean(res[13,], na.rm=TRUE)
-  varCAC_BE  <- var(res[13,], na.rm=TRUE)
+  nsim_BE  <- sum(!is.na(abs(res_fit$est_trt_BE)/res_fit$se_trt_BE > 1.96))
+  pwr_BE   <- sum(abs(res_fit$est_trt_BE)/res_fit$se_trt_BE > 1.96, na.rm=TRUE)/nsim_BE
+  varest_trt_BE<- var(res_fit$est_trt_BE, na.rm=TRUE)
+  mest_trt_BE  <- mean(res_fit$est_trt_BE, na.rm=TRUE)
+  mest_ICC_BE <- mean(res_fit$est_ICC_BE, na.rm=TRUE)
+  varICC_BE  <- var(res_fit$est_ICC_BE, na.rm=TRUE)
+  mest_CAC_BE <-  mean(res_fit$est_CAC_BE, na.rm=TRUE)
+  varCAC_BE  <- var(res_fit$est_CAC_BE, na.rm=TRUE)
   
-  # Coverage & Construct 95%  confidence intervals
-  tstat_BE <- qt(alpha, nsim_BE)
-  num_cov_BE <- sum(abs(res[1,])-tstat_BE*sqrt(varest_BE/(nsim_BE-1)) <= theta & abs(res[1,])+tstat_BE*sqrt(varest_BE/(nsim_BE-1)) >= theta) 
+  #Coverage 
+  #tstat_BE <- qt(alpha, dof)
+  zstat_BE <- qnorm(alpha)
+  #count the number of intervals that contain the true values.
+  num_cov_BE <- sum(res_fit$est_trt_HH-zstat_BE*(res_fit$se_trt_BE) <= theta
+                  & res_fit$est_trt_HH+zstat_BE*(res_fit$se_trt_BE) >= theta) 
   p_cov_BE <- num_cov_BE/nsim_BE
   
   # Calculate empirical power with Kenward-Roger correction
-  tstat_KR_BE <- qt(alpha, res[18,])
-  nsim_KR_BE  <- sum(!is.na(abs(res[5,])/res[17,] > tstat_KR_BE))
-  pwr_KR_BE <- sum(abs(res[5,])/res[17,] > tstat_KR_BE)/nsim_KR_BE 
+  tstat_KR_BE <- qt(alpha, res_fit$adj_ddf_BE)
+  nsim_KR_BE  <- sum(!is.na(abs(res_fit$est_trt_BE)/res_fit$adj_se_BE > tstat_KR_BE))
+  pwr_KR_BE <- sum(abs(res_fit$est_trt_BE)/res_fit$adj_se_BE> tstat_KR_BE)/nsim_KR_BE 
   
   #Type I error rate
   #error of concluding that there is a significant effect or difference
@@ -290,21 +296,29 @@ sim_res <- function(nsim, S, K, m, ICC, CAC, theta){
   
   par_emp_vals <- data.frame(nsim, S, K, m, ICC, CAC, theta,power,
                         nsim_HH=nsim_HH, power_HH=pwr_HH,
-                        var_est_HH=varest_HH, m_est_HH=mest_HH,
-                        nsim0_HH=nsim0_HH,typeI_HH=typeI_HH,
+                        var_est_trt_HH=varest_trt_HH, m_est_trt_HH=mest_trt_HH,
                         nsim_BE=nsim_BE, power_BE=pwr_BE,
-                        var_est_BE=varest_BE,m_est_BE=mest_BE,
-                        nsim0_BE=nsim0_BE, typeI_BE=typeI_BE,
-                        m_estICC_HH=mestICC_HH, var_ICC_HH=varICC_HH,
-                        m_estICC_BE=mestICC_BE, var_ICC_BE=varICC_BE,
-                        m_estCAC_BE=mestCAC_BE, var_CAC_BE=varCAC_BE,
-                        power_KR_HH=pwr_KR_HH,  power_KR_BE=pwr_KR_BE,
-                        p_cov_HH=p_cov_HH, p_cov_BE=p_cov_BE)
+                        var_est_trt_BE=varest_trt_BE,m_est_trt_BE=mest_trt_BE,
+                        m_est_ICC_HH=mest_ICC_HH, 
+                        var_ICC_HH=varICC_HH, m_est_ICC_BE=mest_ICC_BE,
+                        var_ICC_BE=varICC_BE,m_est_CAC_BE=mest_CAC_BE,
+                        var_CAC_BE=varCAC_BE,power_KR_HH=pwr_KR_HH, 
+                        power_KR_BE=pwr_KR_BE,p_cov_HH=p_cov_HH,
+                        p_cov_BE=p_cov_BE)
   
+  #rename empirical power to type I error if there is no treatment effect!
+  # if (theta == 0) {
+  #   par_emp_vals <- par_emp_vals %>%
+  #     rename(typeI_BE = power_BE, typeI_HH = power_HH,
+  #            typeI_KR_BE =power_KR_BE, typeI_KR_HH = power_KR_HH)
+  # }
+  # 
+  #if theta==0 the empirical power calculation corresponds to type I error.
+  
+
   return(par_emp_vals)
 }
 
 
-#pow(VarSCcat(10,5,20, 0.05, 0.8),0.15)
 
 
