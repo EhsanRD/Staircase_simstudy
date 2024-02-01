@@ -268,8 +268,8 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta){
   #tstat_BE <- qt(alpha, dof)
   zstat_BE <- qnorm(alpha)
   #count the number of intervals that contain the true values.
-  num_cov_BE <- sum(res_fit$est_trt_HH-zstat_BE*(res_fit$se_trt_BE) <= theta
-                  & res_fit$est_trt_HH+zstat_BE*(res_fit$se_trt_BE) >= theta) 
+  num_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$se_trt_BE) <= theta
+                  & res_fit$est_trt_BE+zstat_BE*(res_fit$se_trt_BE) >= theta) 
   p_cov_BE <- num_cov_BE/nsim_BE
   
   # Calculate empirical power with Kenward-Roger correction
