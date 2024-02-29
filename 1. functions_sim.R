@@ -39,7 +39,7 @@ VarSCcat <- function(S,K,m, rho0, r){
 
 pow <- function(vars, effsize, siglevel=0.05){
   z <- qnorm(siglevel/2)
-  pow <- pnorm(z + sqrt(1/vars)*effsize)
+  pow <- pnorm(z + sqrt(1/vars)*abs(effsize))
   return(pow)
 }
 
