@@ -320,7 +320,7 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   #when there is, in fact, no such effect or difference.
   if (typ=='cat'){
     power  <- pow(VarSCcat(S,K,m, ICC, CAC),theta)
-  } else if (type=='lin') {
+  } else if (typ=='lin') {
     power  <- pow(VarSClin(S,K,m, ICC, CAC),theta)
   }
   
