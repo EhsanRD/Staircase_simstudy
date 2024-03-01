@@ -224,11 +224,12 @@ fitmodels <- function(S, K, m, ICC, CAC, theta,typ){
            IsSing_HH,IsSing_BE,err_HH,err_BE))
 }
 #a single simulation replicates fitmodels nsim times
+
 sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   # Calculates empirical power based on nsim simulated trial datasets
   # Generate trial dataset, fit both models, calculate rejection probability
   res_fit_mat <- replicate(nsim, fitmodels(S, K, m, ICC, CAC, theta,typ))
-  
+
   res_fit_matx_t <-  t(res_fit_mat)
   #create a data frame convert res matrix to a data frame
   res_fit <- as.data.frame(res_fit_matx_t)
@@ -319,11 +320,9 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   #when there is, in fact, no such effect or difference.
   if (typ=='cat'){
     power  <- pow(VarSCcat(S,K,m, ICC, CAC),theta)
-  } else if (type=='lin') {
+  } else if (typ=='lin') {
     power  <- pow(VarSClin(S,K,m, ICC, CAC),theta)
   }
-  
-  #power  <- pow(VarSClin(S,K,m, ICC, CAC),theta)
   
   s_IsSing_HH <- sum(res_fit$IsSing_HH,na.rm=T)
   s_IsSing_BE <- sum(res_fit$IsSing_BE,na.rm=T)
