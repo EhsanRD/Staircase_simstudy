@@ -1,6 +1,4 @@
 # Calculate empirical power for staircase designs
-# Empirical power was measured as the proportion of trials for which a test would have identified
-# a significant result (p value < .05) doi: 10.1177/1740774520940256.
 # Ehsan Rezaei (Ehsan.rezaeidarzi@monash.edu)
 
 library(MASS)
@@ -10,6 +8,7 @@ library(pbkrtest)
 library(tidyr)
 library(parameters)
 library(lmerTest)
+library(dplyr)
 
 
 setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
@@ -18,7 +17,7 @@ source('1. functions_sim.R')
 
 gen_dat <- function(S, K, m, ICC, CAC, theta){
   # Generates a single dataset from a staircase design
-  # and trial configuration,for a block-exchangeable within-cluster  
+  # and trial configuration,for exchangeable and block-exchangeable within-cluster  
   # correlation structure with given correlation parameters and treatment effect
   #
   # Inputs:
@@ -112,9 +111,9 @@ fitBEmodelSC <- function(dat,typ) {
     withCallingHandlers({
       w_convergence_BE  <- w_other_BE <- e_all_BE <- 0
       if (typ=='cat'){
-        lmerlfit =lmer(Y ~ treat + as.factor(time) + (1|cluster) + (1|clustper), data=dat, REML=TRUE)
+        lmerfit =lmer(Y ~ treat + as.factor(time) + (1|cluster) + (1|clustper), data=dat, REML=TRUE)
       }else if (typ=='lin') {
-        lmerlfit =lmer(Y ~ treat + time + (1|cluster) + (1|clustper), data=dat, REML=TRUE)
+        lmerfit =lmer(Y ~ treat + time + (1|cluster) + (1|clustper), data=dat, REML=TRUE)
       }
       list(remlfit=lmerfit,
            w_convergence_BE = w_convergence_BE,
@@ -143,9 +142,9 @@ fitmodels <- function(S, K, m, ICC, CAC, theta,typ){
   
   # Generate dataset
   dat <- gen_dat(S, K, m, ICC, CAC, theta)
-  dat <- gen_dat(4, 1, 10, 0.01,1,0.15)
-  typ='lin'
-  typ='cat'
+  # dat <- gen_dat(4, 1, 10, 0.01,1,0.15)
+  # typ='lin'
+  # typ='cat'
   # Fit both models
   fitHHmodelSC_dat <- list()
   fitHHmodelSC_dat <- fitHHmodelSC(dat,typ)
@@ -229,9 +228,6 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   # Calculates empirical power based on nsim simulated trial datasets
   # Generate trial dataset, fit both models, calculate rejection probability
   res_fit_mat <- replicate(nsim, fitmodels(S, K, m, ICC, CAC, theta,typ))
-  # set.seed(108159)
-  res_fit_mat <- replicate(10, fitmodels(4, 100,40, 0.01, 0.8,0.05,))
-  
   
   res_fit_matx_t <-  t(res_fit_mat)
   #create a data frame convert res matrix to a data frame
@@ -339,30 +335,35 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   s_err_BE <- sum(res_fit$err_BE,na.rm=T)
   
   par_emp_vals <- data.frame(nsim, S, K, m, ICC, CAC, theta,type=typ,power,
-                             nsim_HH=nsim_HH, 
-                             mesttrt_HH=mest_trt_HH, varest_trt_HH=varest_trt_HH,
-                             nsim_BE=nsim_BE, 
-                             mesttrt_BE=mest_trt_BE, varest_trt_BE=varest_trt_BE,
-                             mestICC_HH=mest_ICC_HH,varICC_HH=varICC_HH, 
-                             mestICC_BE=mest_ICC_BE,varICC_BE=varICC_BE,
-                             mestCAC_BE=mest_CAC_BE,varCAC_BE=var_CAC_BE,
-                             sIsSing_HH=s_IsSing_HH,pow_HH=pwr_HH,
-                             powKR_HH=pwr_KR_HH, powKRnSing_HH=pwr_KR_NSing_HH,
-                             powSat_HH=pwr_Sat_HH,
-                             sIsSing_BE=s_IsSing_BE,pow_BE=pwr_BE,
-                             powKR_BE=pwr_KR_BE,powKRnSing_BE=pwr_KR_NSing_BE,
-                             powSat_BE=pwr_Sat_BE,
-                             pcov_HH=p_cov_HH,pcov_BE=p_cov_BE,
-                             swarconv_HH=s_w_conv_HH,swarconv_BE=s_w_conv_BE,
-                             swarother_HH=s_w_other_HH,swarother_BE=s_w_other_BE,
-                             serr_HH=s_err_HH,serr_BE=s_err_BE)
+           nsim_HH=nsim_HH, 
+           mesttrt_HH=mest_trt_HH, varest_trt_HH=varest_trt_HH,
+           nsim_BE=nsim_BE, 
+           mesttrt_BE=mest_trt_BE, varest_trt_BE=varest_trt_BE,
+           mestICC_HH=mest_ICC_HH,varICC_HH=varICC_HH, 
+           mestICC_BE=mest_ICC_BE,varICC_BE=varICC_BE,
+           mestCAC_BE=mest_CAC_BE,varCAC_BE=var_CAC_BE,
+           sIsSing_HH=s_IsSing_HH,pow_HH=pwr_HH,
+           powKR_HH=pwr_KR_HH, powKRnSing_HH=pwr_KR_NSing_HH,
+           powSat_HH=pwr_Sat_HH,
+           sIsSing_BE=s_IsSing_BE,pow_BE=pwr_BE,
+           powKR_BE=pwr_KR_BE,powKRnSing_BE=pwr_KR_NSing_BE,
+           powSat_BE=pwr_Sat_BE,
+           pcov_HH=p_cov_HH,pcov_BE=p_cov_BE,
+           swarconv_HH=s_w_conv_HH,swarconv_BE=s_w_conv_BE,
+           swarother_HH=s_w_other_HH,swarother_BE=s_w_other_BE,
+           serr_HH=s_err_HH,serr_BE=s_err_BE)
+  
   res_est_fit <- res_fit %>%
-    mutate(nsim, S, K, m, ICC, CAC, theta,type=typ)
+    mutate(rep=1:nsim, nsim, S, K, m, ICC, CAC, theta,type=typ)
   
-  
+  # Reorder columns
+  res_est_fit <- res_est_fit %>% 
+    relocate (rep:type)
   
   return(list(par_emp_vals,res_est_fit))
 }
+
+
 
 
 
