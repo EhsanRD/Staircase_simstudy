@@ -1,4 +1,4 @@
-rm(list=ls())
+
 library(dplyr)
 library(parallel)
 library(purrr)
@@ -12,7 +12,7 @@ source('1. functions_sim.R')
 source('2. gd_fit_res.R')
 
 # Your parameter vectors
-nsim_values <- 100
+nsim_values <- 5
 S_values <- c(4,10)
 K_values <-c(1, 5, 10)  
 m_values <- c(10, 50, 100)  
@@ -97,10 +97,9 @@ resall_df$durtmin <- unlist(lapply(res_lst, function(x) x[[4]]))
 resest_df <- do.call(rbind, lapply(res_lst, function(x) x[[5]]))
 
 
-#Save the data frame to a text file
-#write.table(results_df, "simulation_staircase_results.txt", sep = "\t", row.names = FALSE)
-write.csv(resall_df, "lapRegtesting1_parLapply_sim_res_18configs.csv", row.names = FALSE)
-write.csv(resest_df, "lapRegtesting2_parLapply_sim_res_18configs.csv", row.names = FALSE)
+#Save the data frames to a csv file
+write.csv(resall_df, "result_overall.csv", row.names = FALSE)
+write.csv(resest_df, "result_indivdiual_estimates.csv", row.names = FALSE)
 
 
 
