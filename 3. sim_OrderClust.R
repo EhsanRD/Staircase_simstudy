@@ -12,12 +12,12 @@ source('2. gd_fit_res.R')
 #run the simulation for one single setting
 
 # Your parameter vectors
-nsim_values <- 2
+nsim_values <- 10
 S_values <- c(4,10)
 K_values <-c(1, 5, 10)  
 m_values <- c(10, 50, 100)  
-ICC_values <-c(0.01, 0.05, 0.1, 0.2) 
-CAC_values <- 0.5#c(1, 0.95, 0.8, 0.5) 
+ICC_values <-c(0.01,0.05)#c(0.01, 0.05, 0.1, 0.2) 
+CAC_values <- 1#c(1, 0.95, 0.8, 0.5) 
 theta_values <- c(0, 0.15) 
 type_values <- c("cat","lin")
 
@@ -32,7 +32,7 @@ param_combinations <- expand.grid(
   theta = theta_values,
   typ=type_values
 )
-# Function to filter combinations based on the specified order
+#Function to filter combinations based on the specified order
 filter_combinations <- function(order) {
   #filter the complete set of parameter combinations based on a specific order of S, K, and m values
   filter(param_combinations, S == order[1] & K == order[2] & m == order[3])
@@ -46,9 +46,9 @@ desired_order <- list(
   c(10, 5, 50),
   c(10, 1, 100),
   c(4, 10, 50),
+  c(10, 10, 100),
   c(4, 5, 50),
   c(10, 10, 50),
-  c(10, 10, 100),
   c(4, 1, 100),
   c(10, 1, 50),
   c(10, 5, 10),
@@ -78,9 +78,10 @@ all_res_lst <- list()
 numCores <- detectCores()
 # Loop through each desired order
 for (gpparams in desired_order) {
+  
   #Filter combinations based on the specific order
   filtered_combinations <- filter_combinations(gpparams)
-  
+ 
   #Split the filtered combinations into a list of data frames
   sim_lst <- split(filtered_combinations, seq_len(nrow(filtered_combinations)))
   
@@ -96,7 +97,8 @@ for (gpparams in desired_order) {
     library(lmerTest)
     library(dplyr)
   })
-  clusterExport(clust, c("sim_res_fit", "fitmodels", "gen_dat", "SCdesmat", "fitHHmodelSC", "fitBEmodelSC", "pow","VarSClin" ,"VarSCcat"))
+  clusterExport(clust, c("sim_res_fit", "fitmodels", "gen_dat", "SCdesmat",
+                         "fitHHmodelSC", "fitBEmodelSC", "pow","VarSClin" ,"VarSCcat"))
   
   res_lst <- parLapply(clust, sim_lst, run_all_sim)
   stopCluster(clust)
@@ -119,6 +121,6 @@ resall_df$durtmin <- unlist(lapply(all_res_lst, function(x) x[[4]]))
 resest_df <- do.call(rbind, lapply(all_res_lst, function(x) x[[5]]))
 
 # Save the data frame to a CSV file
-write.csv(resall_df, "testing1_parLapply_sim_res_18configs.csv", row.names = FALSE)
-write.csv(resest_df, "testing2_parLapply_sim_res_18configs.csv", row.names= FALSE)
+write.csv(resall_df, "testing1_parLapply_sim_res_18mainconfigs.csv", row.names = FALSE)
+write.csv(resest_df, "testing2_parLapply_sim_res_18mainconfigs.csv", row.names= FALSE)
           
