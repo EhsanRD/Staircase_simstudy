@@ -1,27 +1,106 @@
+rm(list=ls())
 library(dplyr)
+library(parallel)
+library(purrr)
+library(foreach)
+library(doParallel)
 ########################################
 #run the whole simulation & get results#
+#MU00212779
 ########################################
+source('1. functions_sim.R')
+source('2. gd_fit_res.R')
 
-#run the simulation for one single setting
+# Your parameter vectors
+nsim_values <- 100
+S_values <- c(4,10)
+K_values <-c(1, 5, 10)  
+m_values <- c(10, 50, 100)  
+ICC_values <-c(0.01, 0.05, 0.1, 0.2) 
+CAC_values <- 0.5#c(1, 0.95, 0.8, 0.5) 
+theta_values <-c(0, 0.15) 
+type_values <- c("cat","lin")
 
-#sim_res(nsim, S, K, m, ICC, CAC, theta)
+# Create a list of all combinations of parameter values
+param_combinations <- expand.grid(
+  nsim = nsim_values,
+  S = S_values,
+  K = K_values,
+  m = m_values,
+  ICC = ICC_values,
+  CAC = CAC_values,
+  theta = theta_values,
+  typ=type_values
+)
 
-pow(VarSCcat(10, 1, 100, 0.01, 0.8),0)
-reslt <- sim_res_fit(1000, 10, 1, 100, 0.01, 0.8,0)
-#reslt <- sim_res_fit(1000, 10, 1, 100, 0.01, 0.95,0)
+#Function to run sim_res_fit for a specific combination of parameters
+#The duration time for each configuration might include the overhead of setting up and managing the parallel processes.
+#Note: the durt is not accurate!
+run_all_sim <- function(params) {
+  start_time <- format(Sys.time(), "%a %b %d %X %Y %Z")
+  timeStart<-Sys.time()
+  reslt <- sim_res_fit(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,params$typ)
+  end_time <- format(Sys.time(), "%a %b %d %X %Y %Z")
+  timeEnd<-Sys.time()
+  durt <- as.numeric(difftime(timeEnd, timeStart, units = "mins"))
+  reslt_main<- reslt[[1]]
+  reslt_est <- reslt[[2]]
+  return(list(reslt_main,start_time,end_time,durt,reslt_est))
+}
+#split the data frame param_combinations into a list of data frames
+#based on the values in the sequence from 1 to the number of rows in param_combinations
+sim_lst <- split(param_combinations, seq(nrow(param_combinations)))
 
-saveRDS(reslt, file = paste0('results/', 'par_emp_vals', '.RDS'))
+#Using sockets with parLapply: The socket approach launches a new version of R on each core. dept.stat.lsa.umich.edu
+numCores <- detectCores()
+#system.time({
 
-vals <- readRDS(file = 'results/par_emp_vals.RDS')
+clust <- makeCluster(numCores)
+# Load necessary packages in the worker processes
+clusterEvalQ(clust, { # Load any other necessary packages here
+  library(MASS)
+  library(lme4)
+  library(glmmTMB)
+  library(pbkrtest)
+  library(tidyr)
+  library(parameters)
+  library(lmerTest)
+  library(dplyr)
+})
 
-perfs <- vals %>%
-  mutate(Bias_trt_HH=m_est_trt_HH-theta,Bias_trt_BE=m_est_trt_BE-theta,
-                    Bias_ICC_HH=m_est_ICC_HH-ICC,
-                    Bias_ICC_BE=m_est_ICC_BE-ICC, 
-                    Bias_CAC_BE=m_est_CAC_BE-CAC)
+clusterExport(clust, c("sim_res_fit",
+                       "fitmodels","gen_dat","SCdesmat","fitHHmodelSC",
+                       "fitBEmodelSC","pow","VarSCcat")) # Export necessary functions to the cluster
+set.seed(958624)
+#Perform parallel computation
+res_lst <- parLapply(clust, sim_lst, run_all_sim)
+
+
+#avoid running R sessions in different clusters in the background.
+stopCluster(clust)
+#})
+# set.seed(958624)
+# res_lst <- lapply(sim_lst, run_all_sim)
+res_plst<- lapply(res_lst, function(x) x[[1]])
+
+# Combine the results into a single data frame
+res_df <- do.call(rbind, res_plst)
+resall_df<- res_df %>%
+  mutate(Biastrt_HH=mesttrt_HH-theta,Biastrt_BE=mesttrt_BE-theta,
+         BiasICC_HH=mestICC_HH-ICC,
+         BiasICC_BE=mestICC_BE-ICC,
+         BiasCAC_BE=mestCAC_BE-CAC)
+
+resall_df$startmin <- unlist(lapply(res_lst, function(x) x[[2]]))
+resall_df$endmin <- unlist(lapply(res_lst, function(x) x[[3]]))
+resall_df$durtmin <- unlist(lapply(res_lst, function(x) x[[4]]))
+resest_df <- do.call(rbind, lapply(res_lst, function(x) x[[5]]))
+
+
+#Save the data frame to a text file
+#write.table(results_df, "simulation_staircase_results.txt", sep = "\t", row.names = FALSE)
+write.csv(resall_df, "lapRegtesting1_parLapply_sim_res_18configs.csv", row.names = FALSE)
+write.csv(resest_df, "lapRegtesting2_parLapply_sim_res_18configs.csv", row.names = FALSE)
 
 
 
-vals <- readRDS(file = 'results/par_emp_vals.RDS')
-vals2 <- readRDS(file = 'results/par_emp_vals2.RDS')
