@@ -156,6 +156,7 @@ fitmodels <- function(S, K, m, ICC, CAC, theta,typ){
   estvarclustr_HH <-  ifelse(is.null(remlfit_HH), NA, VarCorr(remlfit_HH)$cluster[1])
   estvarres_HH     <- ifelse(is.null(remlfit_HH), NA, sigma(remlfit_HH)^2)
   est_ICC_HH  <- (estvarclustr_HH)/(estvarclustr_HH+estvarres_HH)
+  #se_ICC_HH <- 
   
   fitBEmodelSC_dat <- fitBEmodelSC(dat,typ)
   remlfit_BE    <- fitBEmodelSC_dat[[1]]
@@ -167,7 +168,9 @@ fitmodels <- function(S, K, m, ICC, CAC, theta,typ){
   estvarclustper_BE <- ifelse(is.null(remlfit_BE), NA, VarCorr(remlfit_BE)$clustper[1]) 
   estvarres_BE      <- ifelse(is.null(remlfit_BE), NA, sigma(remlfit_BE)^2)
   est_ICC_BE <- (estvarclustr_BE+estvarclustper_BE)/(estvarclustr_BE+estvarclustper_BE+estvarres_BE)
+  se_ICC_BE <-
   est_CAC_BE <- (estvarclustr_BE)/(estvarclustr_BE+estvarclustper_BE)
+  #se_CAC_BE <- 
   
   # Get adjusted SE & adjusted degree of freedom with Kenward-Roger correction 
   #also for non-singular fit
@@ -229,7 +232,7 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   # Calculates empirical power based on nsim simulated trial datasets
   # Generate trial dataset, fit both models, calculate rejection probability
   res_fit_mat <- replicate(nsim, fitmodels(S, K, m, ICC, CAC, theta,typ))
-
+  res_fit_mat <- replicate(5, fitmodels(4, 1, 10, 0.2, 1, 0.15,'cat'))
   res_fit_matx_t <-  t(res_fit_mat)
   #create a data frame convert res matrix to a data frame
   res_fit <- as.data.frame(res_fit_matx_t)
@@ -241,7 +244,7 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
                          "w_conv_HH","w_conv_BE","w_other_HH","w_other_BE",
                          "IsSing_HH","IsSing_BE","err_HH","err_BE")
   
-  #Calculate rejection proportion for empirical power
+  #Calculate rejection proportion for empirical power for HH
   #the proportion of times the test rejects the null hypothesis in the study.
   nsim_HH <- NA
   nsim_HH  <- sum(!is.na(res_fit$est_trt_HH) & !is.na(res_fit$se_trt_HH))
@@ -251,7 +254,7 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   mest_ICC_HH <- mean(res_fit$est_ICC_HH, na.rm=TRUE)
   varICC_HH  <- var(res_fit$est_ICC_HH, na.rm=TRUE)
   
-  #Coverage 
+  #Coverage for HH model without any adjustment
   num_cov_HH <- NA
   alpha <- (1 + 0.95)/2
   zstat_HH <- qnorm(alpha)
@@ -261,25 +264,47 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   
   p_cov_HH <- ifelse(is.na(num_cov_HH/nsim_HH), NA, num_cov_HH/nsim_HH)
   
-  ## Calculate empirical power for HH with Kenward-Roger correction & non-singular fit
-  nsim_KR_NSing_HH<- NA
-  tstat_KR_NSing_HH <- qt(alpha, res_fit$adj_ddf_KR_NSing_HH)
-  nsim_KR_NSing_HH <- sum(!is.na(res_fit$est_trt_HH) & !is.na(res_fit$adj_se_KR_NSing_HH))
-  pwr_KR_NSing_HH  <- sum(abs(res_fit$est_trt_HH)/res_fit$adj_se_KR_NSing_HH > tstat_KR_NSing_HH, na.rm=TRUE)/nsim_KR_NSing_HH
-  
+  #Calculate empirical power for HH with Kenward-Roger correction
   nsim_KR_HH<- NA
   tstat_KR_HH <- qt(alpha, res_fit$adj_ddf_KR_HH)
   nsim_KR_HH <- sum(!is.na(res_fit$est_trt_HH) & !is.na(res_fit$adj_se_KR_HH))
   pwr_KR_HH  <- sum(abs(res_fit$est_trt_HH)/res_fit$adj_se_KR_HH > tstat_KR_HH, na.rm=TRUE)/nsim_KR_HH
   
+  #Calculate Coverage for HH with Kenward-Roger correction 
+  num_KR_cov_HH<- NA
+  #count the number of intervals that contain the true values.
+  num_KR_cov_HH <- sum(res_fit$est_trt_HH-zstat_HH*(res_fit$adj_se_KR_HH) <= theta
+                       & res_fit$est_trt_HH+zstat_HH*(res_fit$adj_se_KR_HH) >= theta,na.rm=T)
+  p_KR_cov_HH <- ifelse(is.na(num_KR_cov_HH/nsim_KR_HH), NA, num_KR_cov_HH/nsim_KR_HH)
+  
+  #Calculate empirical power for HH with Kenward-Roger correction & non-singular fit
+  nsim_KR_NSing_HH<- NA
+  tstat_KR_NSing_HH <- qt(alpha, res_fit$adj_ddf_KR_NSing_HH)
+  nsim_KR_NSing_HH <- sum(!is.na(res_fit$est_trt_HH) & !is.na(res_fit$adj_se_KR_NSing_HH))
+  pwr_KR_NSing_HH  <- sum(abs(res_fit$est_trt_HH)/res_fit$adj_se_KR_NSing_HH > tstat_KR_NSing_HH, na.rm=TRUE)/nsim_KR_NSing_HH
+  
+  #Calculate Coverage for HH with Kenward-Roger correction & Non singular fit
+  num_NSing_cov_HH<- NA
+  #count the number of intervals that contain the true values.
+  num_NSing_cov_HH <- sum(res_fit$est_trt_HH-zstat_HH*(res_fit$adj_se_KR_NSing_HH) <= theta
+                          & res_fit$est_trt_HH+zstat_HH*(res_fit$adj_se_KR_NSing_HH) >= theta,na.rm=T)
+  p_NSing_cov_HH <- ifelse(is.na(num_NSing_cov_HH/nsim_KR_NSing_HH), NA, num_NSing_cov_HH/nsim_KR_NSing_HH)
+  
+  #Calculate empirical power for HH with Satterthwaite  correction
   nsim_Sat_HH<- NA
   tstat_Sat_HH <- qt(alpha, res_fit$adj_ddf_Sat_HH)
   nsim_Sat_HH  <- sum(!is.na(res_fit$est_trt_HH) & !is.na(res_fit$adj_se_Sat_HH))
   pwr_Sat_HH <- sum(abs(res_fit$est_trt_HH)/res_fit$adj_se_Sat_HH > tstat_Sat_HH,na.rm=TRUE)/nsim_Sat_HH
   
-  #Type I error rate
-  #error of concluding that there is a significant effect or difference
-  #when there is, in fact, no such effect or difference.
+  #Calculate Coverage for HH with Satterthwaite  correction
+  num_Sat_cov_HH<- NA
+  #count the number of intervals that contain the true values.
+  num_Sat_cov_HH <- sum(res_fit$est_trt_HH-zstat_HH*(res_fit$adj_se_Sat_HH) <= theta
+                        & res_fit$est_trt_HH+zstat_HH*(res_fit$adj_se_Sat_HH) >= theta,na.rm=T)
+  p_Sat_cov_HH <- ifelse(is.na(num_Sat_cov_HH/nsim_Sat_HH), NA, num_Sat_cov_HH/nsim_Sat_HH)
+  
+  #Calculate rejection proportion for empirical power for BE
+  #the proportion of times the test rejects the null hypothesis in the study.
   nsim_BE<- NA
   nsim_BE  <-  sum(!is.na(res_fit$est_trt_BE) & !is.na(res_fit$se_trt_BE))
   pwr_BE   <- sum(abs(res_fit$est_trt_BE)/res_fit$se_trt_BE > 1.96, na.rm=TRUE)/nsim_BE
@@ -290,34 +315,63 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   mest_CAC_BE <-  mean(res_fit$est_CAC_BE, na.rm=TRUE)
   var_CAC_BE  <- var(res_fit$est_CAC_BE, na.rm=TRUE)
   
-  #Coverage 
+  #Coverage for BE model without any adjustment
   num_cov_BE<- NA
   zstat_BE <- qnorm(alpha)
   #count the number of intervals that contain the true values.
-  num_cov_BE <- sum(res_fit$est_trt_HH-zstat_BE*(res_fit$se_trt_BE) <= theta
-                    & res_fit$est_trt_HH+zstat_BE*(res_fit$se_trt_BE) >= theta,na.rm=T) 
+  num_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$se_trt_BE) <= theta
+                    & res_fit$est_trt_BE+zstat_BE*(res_fit$se_trt_BE) >= theta,na.rm=T)
   p_cov_BE <- ifelse(is.na(num_cov_BE/nsim_BE), NA, num_cov_BE/nsim_BE)
   
-  # Calculate empirical power for BE with Kenward-Roger correction
+  
+  #Calculate empirical power for BE with Kenward-Roger correction
+  nsim_KR_BE<- NA
+  tstat_KR_BE <- qt(alpha, res_fit$adj_ddf_KR_BE)
+  nsim_KR_BE  <- sum(!is.na(res_fit$est_trt_BE) & !is.na(res_fit$adj_se_KR_BE))
+  pwr_KR_BE <- sum(abs(res_fit$est_trt_BE)/res_fit$adj_se_KR_BE> tstat_KR_BE, na.rm=TRUE)/nsim_KR_BE
+  
+  
+  #Calculate Coverage for BE with Kenward-Roger correction 
+  num_KR_cov_BE<- NA
+  #count the number of intervals that contain the true values.
+  num_KR_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$adj_se_KR_BE) <= theta
+                         & res_fit$est_trt_BE+zstat_BE*(res_fit$adj_se_KR_BE) >= theta,na.rm=T)
+  p_KR_cov_BE <- ifelse(is.na(num_KR_cov_BE/nsim_KR_BE), NA, num_KR_cov_BE/nsim_KR_BE)
+  
+  #Calculate empirical power for BE with Kenward-Roger correction & Non singular fit 
   nsim_KR_NSing_BE<- NA
   tstat_KR_NSing_BE <- qt(alpha, res_fit$adj_ddf_KR_NSing_BE)
   nsim_KR_NSing_BE  <- sum(!is.na(res_fit$est_trt_BE) & !is.na(res_fit$adj_se_KR_NSing_BE))
   pwr_KR_NSing_BE <- sum(abs(res_fit$est_trt_BE)/res_fit$adj_se_KR_NSing_BE> tstat_KR_NSing_BE, na.rm=TRUE)/nsim_KR_NSing_BE 
   
-  nsim_KR_BE<- NA
-  tstat_KR_BE <- qt(alpha, res_fit$adj_ddf_KR_BE)
-  nsim_KR_BE  <- sum(!is.na(res_fit$est_trt_BE) & !is.na(res_fit$adj_se_KR_BE))
-  pwr_KR_BE <- sum(abs(res_fit$est_trt_BE)/res_fit$adj_se_KR_BE> tstat_KR_BE, na.rm=TRUE)/nsim_KR_BE 
+  #Calculate Coverage for BE with Kenward-Roger correction & Non singular fit
+  num_NSing_cov_BE<- NA
+  #count the number of intervals that contain the true values.
+  num_NSing_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$adj_se_KR_NSing_BE) <= theta
+                    & res_fit$est_trt_BE+zstat_BE*(res_fit$adj_se_KR_NSing_BE) >= theta,na.rm=T)
+  p_NSing_cov_BE <- ifelse(is.na(num_NSing_cov_BE/nsim_KR_NSing_BE), NA, num_NSing_cov_BE/nsim_KR_NSing_BE)
   
-  ## Calculate empirical power for HH with Satterthwaite  correction
+  
+  #Calculate empirical power for BE with Satterthwaite  correction
   nsim_Sat_BE<- NA
   tstat_Sat_BE <- qt(alpha, res_fit$adj_ddf_Sat_BE)
   nsim_Sat_BE  <- sum(!is.na(res_fit$est_trt_BE) & !is.na(res_fit$adj_se_Sat_BE))
   pwr_Sat_BE <- sum(abs(res_fit$est_trt_BE)/res_fit$adj_se_Sat_BE > tstat_Sat_BE,na.rm=TRUE)/nsim_Sat_BE
   
+  
+  #Calculate Coverage for BE with Satterthwaite  correction
+  num_Sat_cov_BE<- NA
+  #count the number of intervals that contain the true values.
+  num_Sat_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$adj_se_Sat_BE) <= theta
+                         & res_fit$est_trt_BE+zstat_BE*(res_fit$adj_se_Sat_BE) >= theta,na.rm=T)
+  p_Sat_cov_BE <- ifelse(is.na(num_Sat_cov_BE/nsim_Sat_BE), NA, num_Sat_cov_BE/nsim_Sat_BE)
+  
+  
   #Type I error rate
   #error of concluding that there is a significant effect or difference
   #when there is, in fact, no such effect or difference.
+  
+  
   if (typ=='cat'){
     power  <- pow(VarSCcat(S,K,m, ICC, CAC),theta)
   } else if (typ=='lin') {
@@ -347,10 +401,14 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
            sIsSing_BE=s_IsSing_BE,pow_BE=pwr_BE,
            powKR_BE=pwr_KR_BE,powKRnSing_BE=pwr_KR_NSing_BE,
            powSat_BE=pwr_Sat_BE,
-           pcov_HH=p_cov_HH,pcov_BE=p_cov_BE,
+           pcov_HH=p_cov_HH,pcov_BE=p_cov_BE,pKRcov_HH=p_KR_cov_HH,pKRcov_BE=p_KR_cov_BE,
+           pNSingcov_HH=p_NSing_cov_HH,pNSingcov_BE=p_NSing_cov_BE,
+           pSat_cov_HH=p_Sat_cov_HH,pSat_cov_BE=p_Sat_cov_BE,
            swarconv_HH=s_w_conv_HH,swarconv_BE=s_w_conv_BE,
            swarother_HH=s_w_other_HH,swarother_BE=s_w_other_BE,
            serr_HH=s_err_HH,serr_BE=s_err_BE)
+  
+
   
   res_est_fit <- res_fit %>%
     mutate(rep=1:nsim, nsim, S, K, m, ICC, CAC, theta,type=typ)
