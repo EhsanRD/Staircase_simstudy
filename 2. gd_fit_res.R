@@ -142,9 +142,6 @@ fitmodels <- function(S, K, m, ICC, CAC, theta,typ){
   
   # Generate dataset
   dat <- gen_dat(S, K, m, ICC, CAC, theta)
-  # dat <- gen_dat(4, 1, 10, 0.01,1,0.15)
-  # typ='lin'
-  # typ='cat'
   # Fit both models
   fitHHmodelSC_dat <- list()
   fitHHmodelSC_dat <- fitHHmodelSC(dat,typ)
@@ -389,9 +386,9 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   par_emp_vals <- data.frame(nsim, S, K, m, ICC, CAC, theta,type=typ,power,
            nsim_HH=nsim_HH, 
            mesttrt_HH=mest_trt_HH, varest_trt_HH=varest_trt_HH,
+           mestICC_HH=mest_ICC_HH,varICC_HH=varICC_HH, 
            nsim_BE=nsim_BE, 
            mesttrt_BE=mest_trt_BE,varest_trt_BE=varest_trt_BE,
-           mestICC_HH=mest_ICC_HH,varICC_HH=varICC_HH, 
            mestICC_BE=mest_ICC_BE,varICC_BE=varICC_BE,
            mestCAC_BE=mest_CAC_BE,varCAC_BE=var_CAC_BE,
            sIsSing_HH=s_IsSing_HH,pow_HH=pwr_HH,
@@ -404,9 +401,9 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
            powSat_BE=pwr_Sat_BE,
            pcov_BE=p_cov_BE,pKRcov_BE=p_KR_cov_BE,
            pKRnSingcov_BE=p_cov_KR_NSing_BE,pSatcov_BE=p_cov_Sat_BE,
-           swarconv_HH=s_w_conv_HH,swarconv_BE=s_w_conv_BE,
-           swarother_HH=s_w_other_HH,swarother_BE=s_w_other_BE,
-           serr_HH=s_err_HH,serr_BE=s_err_BE)
+           swarconv_HH=s_w_conv_HH, swarother_HH=s_w_other_HH,
+           serr_HH=s_err_HH,swarconv_BE=s_w_conv_BE,
+           swarother_BE=s_w_other_BE, serr_BE=s_err_BE)
   
 
   
