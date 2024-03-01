@@ -232,7 +232,6 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   # Calculates empirical power based on nsim simulated trial datasets
   # Generate trial dataset, fit both models, calculate rejection probability
   res_fit_mat <- replicate(nsim, fitmodels(S, K, m, ICC, CAC, theta,typ))
-  res_fit_mat <- replicate(5, fitmodels(4, 1, 10, 0.2, 1, 0.15,'cat'))
   res_fit_matx_t <-  t(res_fit_mat)
   #create a data frame convert res matrix to a data frame
   res_fit <- as.data.frame(res_fit_matx_t)
@@ -284,11 +283,11 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   pwr_KR_NSing_HH  <- sum(abs(res_fit$est_trt_HH)/res_fit$adj_se_KR_NSing_HH > tstat_KR_NSing_HH, na.rm=TRUE)/nsim_KR_NSing_HH
   
   #Calculate Coverage for HH with Kenward-Roger correction & Non singular fit
-  num_NSing_cov_HH<- NA
+  num_KR_NSing_cov_HH<- NA
   #count the number of intervals that contain the true values.
-  num_NSing_cov_HH <- sum(res_fit$est_trt_HH-zstat_HH*(res_fit$adj_se_KR_NSing_HH) <= theta
+  num_KR_NSing_cov_HH <- sum(res_fit$est_trt_HH-zstat_HH*(res_fit$adj_se_KR_NSing_HH) <= theta
                           & res_fit$est_trt_HH+zstat_HH*(res_fit$adj_se_KR_NSing_HH) >= theta,na.rm=T)
-  p_NSing_cov_HH <- ifelse(is.na(num_NSing_cov_HH/nsim_KR_NSing_HH), NA, num_NSing_cov_HH/nsim_KR_NSing_HH)
+  p_cov_KR_NSing_HH <- ifelse(is.na(num_KR_NSing_cov_HH/nsim_KR_NSing_HH), NA, num_KR_NSing_cov_HH/nsim_KR_NSing_HH)
   
   #Calculate empirical power for HH with Satterthwaite  correction
   nsim_Sat_HH<- NA
@@ -301,7 +300,7 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   #count the number of intervals that contain the true values.
   num_Sat_cov_HH <- sum(res_fit$est_trt_HH-zstat_HH*(res_fit$adj_se_Sat_HH) <= theta
                         & res_fit$est_trt_HH+zstat_HH*(res_fit$adj_se_Sat_HH) >= theta,na.rm=T)
-  p_Sat_cov_HH <- ifelse(is.na(num_Sat_cov_HH/nsim_Sat_HH), NA, num_Sat_cov_HH/nsim_Sat_HH)
+  p_cov_Sat_HH <- ifelse(is.na(num_Sat_cov_HH/nsim_Sat_HH), NA, num_Sat_cov_HH/nsim_Sat_HH)
   
   #Calculate rejection proportion for empirical power for BE
   #the proportion of times the test rejects the null hypothesis in the study.
@@ -345,11 +344,11 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   pwr_KR_NSing_BE <- sum(abs(res_fit$est_trt_BE)/res_fit$adj_se_KR_NSing_BE> tstat_KR_NSing_BE, na.rm=TRUE)/nsim_KR_NSing_BE 
   
   #Calculate Coverage for BE with Kenward-Roger correction & Non singular fit
-  num_NSing_cov_BE<- NA
+  num_KR_NSing_cov_BE<- NA
   #count the number of intervals that contain the true values.
-  num_NSing_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$adj_se_KR_NSing_BE) <= theta
+  num_KR_NSing_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$adj_se_KR_NSing_BE) <= theta
                     & res_fit$est_trt_BE+zstat_BE*(res_fit$adj_se_KR_NSing_BE) >= theta,na.rm=T)
-  p_NSing_cov_BE <- ifelse(is.na(num_NSing_cov_BE/nsim_KR_NSing_BE), NA, num_NSing_cov_BE/nsim_KR_NSing_BE)
+  p_cov_KR_NSing_BE <- ifelse(is.na(num_KR_NSing_cov_BE/nsim_KR_NSing_BE), NA, num_KR_NSing_cov_BE/nsim_KR_NSing_BE)
   
   
   #Calculate empirical power for BE with Satterthwaite  correction
@@ -364,7 +363,7 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   #count the number of intervals that contain the true values.
   num_Sat_cov_BE <- sum(res_fit$est_trt_BE-zstat_BE*(res_fit$adj_se_Sat_BE) <= theta
                          & res_fit$est_trt_BE+zstat_BE*(res_fit$adj_se_Sat_BE) >= theta,na.rm=T)
-  p_Sat_cov_BE <- ifelse(is.na(num_Sat_cov_BE/nsim_Sat_BE), NA, num_Sat_cov_BE/nsim_Sat_BE)
+  p_cov_Sat_BE <- ifelse(is.na(num_Sat_cov_BE/nsim_Sat_BE), NA, num_Sat_cov_BE/nsim_Sat_BE)
   
   
   #Type I error rate
@@ -391,19 +390,20 @@ sim_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
            nsim_HH=nsim_HH, 
            mesttrt_HH=mest_trt_HH, varest_trt_HH=varest_trt_HH,
            nsim_BE=nsim_BE, 
-           mesttrt_BE=mest_trt_BE, varest_trt_BE=varest_trt_BE,
+           mesttrt_BE=mest_trt_BE,varest_trt_BE=varest_trt_BE,
            mestICC_HH=mest_ICC_HH,varICC_HH=varICC_HH, 
            mestICC_BE=mest_ICC_BE,varICC_BE=varICC_BE,
            mestCAC_BE=mest_CAC_BE,varCAC_BE=var_CAC_BE,
            sIsSing_HH=s_IsSing_HH,pow_HH=pwr_HH,
            powKR_HH=pwr_KR_HH, powKRnSing_HH=pwr_KR_NSing_HH,
            powSat_HH=pwr_Sat_HH,
+           pcov_HH=p_cov_HH,pKRcov_HH=p_KR_cov_HH,
+           pKRnSingcov_HH=p_cov_KR_NSing_HH,pcovSat_HH=p_cov_Sat_HH,
            sIsSing_BE=s_IsSing_BE,pow_BE=pwr_BE,
            powKR_BE=pwr_KR_BE,powKRnSing_BE=pwr_KR_NSing_BE,
            powSat_BE=pwr_Sat_BE,
-           pcov_HH=p_cov_HH,pcov_BE=p_cov_BE,pKRcov_HH=p_KR_cov_HH,pKRcov_BE=p_KR_cov_BE,
-           pNSingcov_HH=p_NSing_cov_HH,pNSingcov_BE=p_NSing_cov_BE,
-           pSat_cov_HH=p_Sat_cov_HH,pSat_cov_BE=p_Sat_cov_BE,
+           pcov_BE=p_cov_BE,pKRcov_BE=p_KR_cov_BE,
+           pKRnSingcov_BE=p_cov_KR_NSing_BE,pSatcov_BE=p_cov_Sat_BE,
            swarconv_HH=s_w_conv_HH,swarconv_BE=s_w_conv_BE,
            swarother_HH=s_w_other_HH,swarother_BE=s_w_other_BE,
            serr_HH=s_err_HH,serr_BE=s_err_BE)
