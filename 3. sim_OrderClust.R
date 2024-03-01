@@ -1,3 +1,4 @@
+#rm(list=ls())
 library(dplyr)
 library(parallel)
 library(purrr)
@@ -12,12 +13,12 @@ source('2. gd_fit_res.R')
 #run the simulation for one single setting
 
 # Your parameter vectors
-nsim_values <- 10
+nsim_values <- 2
 S_values <- c(4,10)
 K_values <-c(1, 5, 10)  
 m_values <- c(10, 50, 100)  
 ICC_values <-c(0.01,0.05)#c(0.01, 0.05, 0.1, 0.2) 
-CAC_values <- 1#c(1, 0.95, 0.8, 0.5) 
+CAC_values <- c(1,0.95)#c(1, 0.95, 0.8, 0.5) 
 theta_values <- c(0, 0.15) 
 type_values <- c("cat","lin")
 
@@ -98,7 +99,7 @@ for (gpparams in desired_order) {
     library(dplyr)
   })
   clusterExport(clust, c("sim_res_fit", "fitmodels", "gen_dat", "SCdesmat",
-                         "fitHHmodelSC", "fitBEmodelSC", "pow","VarSClin" ,"VarSCcat"))
+                         "fitHHmodelSC", "fitBEmodelSC", "pow" ,"VarSCcat","VarSClin"))
   
   res_lst <- parLapply(clust, sim_lst, run_all_sim)
   stopCluster(clust)
@@ -120,7 +121,6 @@ resall_df$endmin <- unlist(lapply(all_res_lst, function(x) x[[3]]))
 resall_df$durtmin <- unlist(lapply(all_res_lst, function(x) x[[4]]))
 resest_df <- do.call(rbind, lapply(all_res_lst, function(x) x[[5]]))
 
-# Save the data frame to a CSV file
-write.csv(resall_df, "testing1_parLapply_sim_res_18mainconfigs.csv", row.names = FALSE)
-write.csv(resest_df, "testing2_parLapply_sim_res_18mainconfigs.csv", row.names= FALSE)
-          
+#Save the data frames to a csv file
+write.csv(resall_df, "result_overall.csv", row.names = FALSE)
+write.csv(resest_df, "result_indivdiual_estimates.csv", row.names = FALSE)
