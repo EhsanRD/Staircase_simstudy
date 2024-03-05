@@ -9,7 +9,7 @@ library(tidyr)
 library(parameters)
 library(lmerTest)
 library(dplyr)
-
+library(TeachingDemos)
 
 setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
 
