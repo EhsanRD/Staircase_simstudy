@@ -4,6 +4,7 @@ library(parallel)
 library(purrr)
 library(foreach)
 library(doParallel)
+library(TeachingDemos)
 ########################################
 #run the whole simulation & get results#
 #MU00212779
@@ -13,13 +14,13 @@ source('2. gd_fit_res.R')
 #run the simulation for one single setting
 
 # Your parameter vectors
-nsim_values <- 1000
+nsim_values <- 2
 S_values <-c(4,10)
 K_values <- c(1, 5, 10)  
 m_values <- c(10, 50, 100)  
-ICC_values <-c(0.01, 0.05, 0.1, 0.2) 
+ICC_values <-c(0.01,0.05)#c(0.01, 0.05, 0.1, 0.2) 
 CAC_values <- c(1, 0.95, 0.8, 0.5) 
-theta_values <- c(0, 0.15) 
+theta_values <- 0#c(0, 0.15) 
 type_values <- c("cat","lin")
 
 # Create a list of all combinations of parameter values
@@ -60,14 +61,21 @@ desired_order <- list(
   c(10, 10, 10),
   c(10, 1, 10)
 )
+
 run_all_sim <- function(params) {
   start_time <- format(Sys.time(), "%a %b %d %X %Y %Z")
   timeStart<-Sys.time()
+  # Set a random seed specific to this configuration
+  param_str <- paste(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,
+                     params$typ, sep = "_")
+  tointseed<-char2seed(param_str)
+  set.seed(tointseed)
   reslt <- sim_res_fit(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,params$typ)
   end_time <- format(Sys.time(), "%a %b %d %X %Y %Z")
   timeEnd<-Sys.time()
   durt <- as.numeric(difftime(timeEnd, timeStart, units = "mins"))
-  tim_df <- cbind(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,as.character(params$typ),start_time,end_time,durt)
+  tim_df <- cbind(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,
+                  as.character(params$typ),tointseed,start_time,end_time,durt)
   return(list(reslt,tim_df))
 }
 # Initialize an empty list to store results
@@ -85,6 +93,7 @@ for (gpparams in desired_order) {
   # Perform parallel computation for the current set of combinations
   clust <- makeCluster(numCores)
   clusterEvalQ(clust, {
+    library(TeachingDemos)
     library(MASS)
     library(lme4)
     library(glmmTMB)
@@ -93,8 +102,9 @@ for (gpparams in desired_order) {
     library(parameters)
     library(lmerTest)
     library(dplyr)
+    library(TeachingDemos)
   })
-  clusterExport(clust, c("sim_res_fit", "fitmodels", "gen_dat", "SCdesmat",
+    clusterExport(clust, c("sim_res_fit", "fitmodels", "gen_dat", "SCdesmat",
                          "fitHHmodelSC", "fitBEmodelSC", "pow" ,"VarSCcat","VarSClin"))
   
   est_lst <- parLapply(clust, sim_lst, run_all_sim)
@@ -110,7 +120,7 @@ est_df <- do.call(rbind, lapply(all_est_lst, function(x) x[[1]]))
 write.csv(est_df, "all_estimates.csv", row.names = FALSE)
 
 sve_t <- do.call(rbind, lapply(all_est_lst, function(x) x[[2]]))
-adj_names <- c("nsim", "S", "K", "m", "ICC", "CAC", "theta", "type","start_time","end_time","durt")
+adj_names <- c("nsim", "S", "K", "m", "ICC", "CAC", "theta", "type","seednum","start_time","end_time","durt")
 colnames(sve_t) <- adj_names
 write.csv(sve_t, "time_records.csv", row.names = FALSE)
 
