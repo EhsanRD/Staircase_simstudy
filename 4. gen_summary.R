@@ -1,7 +1,7 @@
 #generate summary results
 summary_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   
-  # # load estimates
+  # #load estimates
   # config <- paste0(
   #   '_nsim', nsim,
   #   '_S', S,
@@ -205,17 +205,42 @@ file_name=as.list(dir(path = "est_files/", pattern="estimates_*"))
 
 # Initialize an empty list to store results
 smry_totl <- data.frame()
-# Loop through each RData file
-for (i in seq_along(file_name)) {
-  # Load the RData file
-  est_list <- file_name[[i]]
-  load(file=paste0("est_files/",est_list))
+
+# # Loop through each RData file
+# for (i in seq_along(file_name)) {
+#   # Load the RData file
+#   est_list <- file_name[[i]]
+#   load(file=paste0("est_files/",est_list))
+#   unique_val <- sapply(res_est_fit, unique)
+#   smry <- summary_res_fit(unique_val$nsim, unique_val$S, unique_val$K, unique_val$m, 
+#                           unique_val$ICC, unique_val$CAC, unique_val$theta,unique_val$typ)
+#   # Add the result to the data frame
+#   smry_totl <- rbind(smry_totl, smry)
+# }
+
+# Function to process each RData file
+process_file <- function(est_list) {
+  load(file=paste0("est_files/", est_list))
   unique_val <- sapply(res_est_fit, unique)
-  smry <- summary_res_fit(unique_val$nsim, unique_val$S, unique_val$K, unique_val$m, 
-                          unique_val$ICC, unique_val$CAC, unique_val$theta,unique_val$typ)
-  # Add the result to the data frame
-  smry_totl <- rbind(smry_totl, smry)
+  summary_res_fit(unique_val$nsim, unique_val$S, unique_val$K, unique_val$m, 
+                  unique_val$ICC, unique_val$CAC, unique_val$theta, unique_val$typ)
 }
+
+# Parallelize processing using parLapply
+cl <- makeCluster(detectCores())  # Create a cluster using all available cores
+clusterExport(cl, c("file_name", "res_est_fit", "summary_res_fit", "pow" ,"VarSCcat","VarSClin"))  # Export necessary variables and functions to cluster
+clusterEvalQ(cl, {
+  library(tidyr)
+  library(parameters)
+  library(lmerTest)
+  library(dplyr)
+})
+
+smry_list <- parLapply(cl, file_name, process_file)  # Apply the function in parallel
+stopCluster(cl)  # Stop the cluster
+
+# Combine the results into a single data frame
+smry_totl <- do.call(rbind, smry_list)
 
 #Save the data frames to a csv file
 write.csv(smry_totl, "summary.csv", row.names = FALSE)
