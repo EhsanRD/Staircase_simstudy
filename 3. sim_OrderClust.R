@@ -13,13 +13,13 @@ source('2. gd_fit_res.R')
 #run the simulation for one single setting
 
 # Your parameter vectors
-nsim_values <- 2
+nsim_values <- 1000
 S_values <-c(4,10)
 K_values <- c(1, 5, 10)  
-m_values <- 10#c(10, 50, 100)  
+m_values <- c(10, 50, 100)  
 ICC_values <-c(0.01, 0.05, 0.1, 0.2) 
-CAC_values <- 0.5#c(1, 0.95, 0.8, 0.5) 
-theta_values <- 0#c(0, 0.15) 
+CAC_values <- c(1, 0.95, 0.8, 0.5) 
+theta_values <- c(0, 0.15) 
 type_values <- c("cat","lin")
 
 # Create a list of all combinations of parameter values
@@ -41,19 +41,19 @@ filter_combinations <- function(order) {
 
 # Specify the desired order
 desired_order <- list(
-  # c(10, 5, 100),
-  #  c(4, 10, 100),
-  # c(4, 5, 100),
-  # c(10, 5, 50),
-  # c(10, 1, 100),
-  # c(4, 10, 50),
-  # c(10, 10, 100),
-  # c(4, 5, 50),
-  # c(10, 10, 50),
-  # c(4, 1, 100),
-  # c(10, 1, 50),
+  c(10, 5, 100),
+   c(4, 10, 100),
+  c(4, 5, 100),
+  c(10, 5, 50),
+  c(10, 1, 100),
+  c(4, 10, 50),
+  c(10, 10, 100),
+  c(4, 5, 50),
+  c(10, 10, 50),
+  c(4, 1, 100),
+  c(10, 1, 50),
   c(10, 5, 10),
-  # c(4, 1, 50),
+  c(4, 1, 50),
   c(4, 10, 10),
   c(4, 5, 10),
   c(4, 1, 10),
@@ -107,11 +107,11 @@ for (gpparams in desired_order) {
 
 # Combine the results into a single data frame
 est_df <- do.call(rbind, lapply(all_est_lst, function(x) x[[1]]))
-#write.csv(est_df, "all_estimates.csv", row.names = FALSE)
+write.csv(est_df, "all_estimates.csv", row.names = FALSE)
 
 sve_t <- do.call(rbind, lapply(all_est_lst, function(x) x[[2]]))
 adj_names <- c("nsim", "S", "K", "m", "ICC", "CAC", "theta", "type","start_time","end_time","durt")
 colnames(sve_t) <- adj_names
-#write.csv(sve_t, "time_records.csv", row.names = FALSE)
+write.csv(sve_t, "time_records.csv", row.names = FALSE)
 
 
