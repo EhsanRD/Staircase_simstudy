@@ -1,25 +1,25 @@
 #generate summary results
 summary_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   
-  # load estimates
-  config <- paste0(
-    '_nsim', nsim,
-    '_S', S,
-    '_K', K,
-    '_m', m,
-    '_ICC', ICC,
-    '_CAC', CAC,
-    '_theta', theta,
-    '_', typ
-  )
-  
-  infile=paste0(
-    'est_files//',
-    'estimates',
-    config,
-    '.RData'
-  )
-  load(file=infile)
+  # # load estimates
+  # config <- paste0(
+  #   '_nsim', nsim,
+  #   '_S', S,
+  #   '_K', K,
+  #   '_m', m,
+  #   '_ICC', ICC,
+  #   '_CAC', CAC,
+  #   '_theta', theta,
+  #   '_', typ
+  # )
+  # 
+  # infile=paste0(
+  #   'est_files//',
+  #   'estimates',
+  #   config,
+  #   '.RData'
+  # )
+  # load(file=infile)
   
   # Calculate rejection proportion for empirical power for HH
   # the proportion of times the test rejects the null hypothesis in the study.
@@ -195,6 +195,10 @@ summary_res_fit <- function(nsim, S, K, m, ICC, CAC, theta,typ){
   
   return(summary_emp_vals)
 }
+
+#################################################################
+#######get summary for all data files of estimations#############
+#################################################################
 
 # List all files in the directory
 file_name=as.list(dir(path = "est_files/", pattern="estimates_*"))
