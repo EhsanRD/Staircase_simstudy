@@ -65,11 +65,13 @@ desired_order <- list(
 run_all_sim <- function(params) {
   start_time <- format(Sys.time(), "%a %b %d %X %Y %Z")
   timeStart<-Sys.time()
+  
   # Set a random seed specific to this configuration
   param_str <- paste(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,
                      params$typ, sep = "_")
-  tointseed<-char2seed(param_str)
+  tointseed <- char2seed(param_str)
   set.seed(tointseed)
+  
   reslt <- sim_res_fit(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,params$typ)
   end_time <- format(Sys.time(), "%a %b %d %X %Y %Z")
   timeEnd<-Sys.time()
