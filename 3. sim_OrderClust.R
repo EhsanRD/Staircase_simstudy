@@ -1,4 +1,4 @@
-#rm(list=ls())
+rm(list=ls())
 library(dplyr)
 library(parallel)
 library(purrr)
@@ -13,12 +13,12 @@ source('2. gd_fit_res.R')
 #run the simulation for one single setting
 
 # Your parameter vectors
-nsim_values <- 2
+nsim_values <- 1000
 S_values <- c(4,10)
 K_values <-c(1, 5, 10)  
 m_values <- c(10, 50, 100)  
-ICC_values <-c(0.01,0.05)#c(0.01, 0.05, 0.1, 0.2) 
-CAC_values <- c(1,0.95)#c(1, 0.95, 0.8, 0.5) 
+ICC_values <-c(0.01, 0.05, 0.1, 0.2) 
+CAC_values <- c(1, 0.95, 0.8, 0.5) 
 theta_values <- c(0, 0.15) 
 type_values <- c("cat","lin")
 
@@ -112,8 +112,7 @@ for (gpparams in desired_order) {
 res_df <- do.call(rbind, lapply(all_res_lst, function(x) x[[1]]))
 resall_df <- res_df %>%
   mutate(Biastrt_HH = mesttrt_HH - theta, Biastrt_BE = mesttrt_BE - theta,
-         BiasICC_HH = mestICC_HH - ICC,
-         BiasICC_BE = mestICC_BE - ICC,
+         BiasICC_HH = mestICC_HH - ICC, BiasICC_BE = mestICC_BE - ICC,
          BiasCAC_BE = mestCAC_BE - CAC)
 
 resall_df$startmin <- unlist(lapply(all_res_lst, function(x) x[[2]]))
