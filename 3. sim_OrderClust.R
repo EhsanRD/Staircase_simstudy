@@ -14,13 +14,13 @@ source('2. gd_fit_res.R')
 #run the simulation for one single setting
 
 # Your parameter vectors
-nsim_values <- 2
+nsim_values <- 1000
 S_values <-c(4,10)
 K_values <- c(1, 5, 10)  
 m_values <- c(10, 50, 100)  
-ICC_values <-c(0.01,0.05)#c(0.01, 0.05, 0.1, 0.2) 
+ICC_values <- c(0.01, 0.05, 0.1, 0.2) 
 CAC_values <- c(1, 0.95, 0.8, 0.5) 
-theta_values <- 0#c(0, 0.15) 
+theta_values <- c(0, 0.15) 
 type_values <- c("cat","lin")
 
 # Create a list of all combinations of parameter values
@@ -67,7 +67,7 @@ run_all_sim <- function(params) {
   timeStart<-Sys.time()
   
   # Set a random seed specific to this configuration
-  param_str <- paste(params$nsim, params$S, params$K, params$m, params$ICC, params$CAC, params$theta,
+  param_str <- paste(params$S, params$K, params$m, params$ICC, params$CAC, params$theta,
                      params$typ, sep = "_")
   tointseed <- char2seed(param_str)
   set.seed(tointseed)
