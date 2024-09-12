@@ -153,7 +153,6 @@ fitmodels <- function(S, K, m, ICC, CAC, theta,typ){
   estvarclustr_HH <-  ifelse(is.null(remlfit_HH), NA, VarCorr(remlfit_HH)$cluster[1])
   estvarres_HH     <- ifelse(is.null(remlfit_HH), NA, sigma(remlfit_HH)^2)
   est_ICC_HH  <- (estvarclustr_HH)/(estvarclustr_HH+estvarres_HH)
-  #se_ICC_HH <- 
   
   fitBEmodelSC_dat <- fitBEmodelSC(dat,typ)
   remlfit_BE    <- fitBEmodelSC_dat[[1]]
@@ -165,9 +164,8 @@ fitmodels <- function(S, K, m, ICC, CAC, theta,typ){
   estvarclustper_BE <- ifelse(is.null(remlfit_BE), NA, VarCorr(remlfit_BE)$clustper[1]) 
   estvarres_BE      <- ifelse(is.null(remlfit_BE), NA, sigma(remlfit_BE)^2)
   est_ICC_BE <- (estvarclustr_BE+estvarclustper_BE)/(estvarclustr_BE+estvarclustper_BE+estvarres_BE)
-  se_ICC_BE <-
   est_CAC_BE <- (estvarclustr_BE)/(estvarclustr_BE+estvarclustper_BE)
-  #se_CAC_BE <- 
+
   
   # Get adjusted SE & adjusted degree of freedom with Kenward-Roger correction 
   #also for non-singular fit
