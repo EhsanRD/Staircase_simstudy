@@ -2,7 +2,7 @@ setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
 dis_dat <- read.csv("Disinvestment example/pmed.1002412.s002_Patient-level data.csv")
 subdis_dat <- subset(dis_dat, site ==1 & study1==0, select = c(dhvicavglos, sw_step,no_we_exposure,
                         new_we_exposure, study1, site, index_ward,los))
-#colnames(subdis_dat)[colnames(subdis_dat) == "no_we_exposure"] <- "we_exposure_0"
+##colnames(subdis_dat)[colnames(subdis_dat) == "no_we_exposure"] <- "we_exposure_0"
 colnames(subdis_dat)[colnames(subdis_dat) == "new_we_exposure"] <- "treat"
 colnames(subdis_dat)[colnames(subdis_dat) == "dhvicavglos"] <- "Y"
 subdis_dat$time=subdis_dat$sw_step-7
