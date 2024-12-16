@@ -5,13 +5,9 @@ library(purrr)
 library(foreach)
 library(doParallel)
 library(TeachingDemos)
-########################################
-#run the whole simulation & get results#
-#MU00212779
-########################################
-setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
+
+#setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
 #source('2. gd_fit_res_v2.R')
-#run the simulation for one single setting
 
 # Your parameter vectors
 nsim_values <- 1000
