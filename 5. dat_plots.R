@@ -9,8 +9,6 @@ cal_val <- function(ylow, yup) {
   
   return(list(yexp1 = yexp1, yexp2 = yexp2, syb = syb, syh = syh, sysh = sysh))
 }
-# install.packages("devtools")
-#devtools::install_github("matherealize/looplot")
 
 library(looplot)
 library(gridExtra)
