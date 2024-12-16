@@ -408,7 +408,6 @@ ylow <- 50
 yup  <- 100
 fval <- cal_val(ylow, yup)
 
-
 # Adjust coverage values
 smry_df$cov_HH_l=(smry_df$cov_HH-2*smry_df$MCSEcov_HH)*100
 smry_df$cov_HH_u=(smry_df$cov_HH+2*smry_df$MCSEcov_HH)*100
@@ -585,10 +584,6 @@ plot_nested_loop(output_filename = "FigS11_estcovKR_vs_cov_theta15_BE_CatbyCACs.
                  data_subset = smry_df_sub,theta_val = "non-zero", y_variable_name= "Coverage (%)",
                  legend_labels = c("BE model W/ KR","BE model W/O KR"))
 dev.off()
-
-
-
-
 #######################################################################################################
 #######################################################################################################
 #######################################################################################################
@@ -644,4 +639,3 @@ plot_nested_loop(output_filename = "FigS01_sSingKR_theta15.png",
                  data_subset = smry_df_sub,theta_val="non-zero", y_variable_name= "Number of Singular fit",
                  legend_labels = c("Exch model", "BE model"))
 dev.off()
-
