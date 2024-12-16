@@ -1,13 +1,4 @@
 # Calculate empirical power for staircase designs
-# Ehsan Rezaei (Ehsan.rezaeidarzi@monash.edu)
-# S=6
-# K=1
-# m=4
-# ICC=0.2
-# CAC=0.5
-# theta=0.15
-# typ='cat'
-
 library(MASS)
 library(lme4)
 library(glmmTMB)
@@ -18,8 +9,7 @@ library(lmerTest)
 library(dplyr)
 library(TeachingDemos)
 
-
-setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
+#setwd("G:\\Shared drives\\Ehsan PhD work\\Codes\\Git\\Staircase_simstudy\\")
 
 source('1. functions_sim.R')
 
