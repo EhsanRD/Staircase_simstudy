@@ -11,7 +11,6 @@ original_values <- c(5, 1, 6, 2, 4, 3)
 mapped_values <- c(1, 2, 3, 4, 5, 6)
 
 subdis_dat$cluster <- mapped_values[match(subdis_dat$index_ward, original_values)]
-
 #limit cluster-period cells to create a staircase design 
 subdis_dat2 <- subset(subdis_dat, (cluster ==1 & (time==1 | time==2)) | (cluster ==2 & (time==2 | time==3)) 
                       | (cluster ==3 & (time==3 | time==4)) | (cluster ==4 & (time==4 | time==5))  
