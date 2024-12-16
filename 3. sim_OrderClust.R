@@ -40,18 +40,16 @@ filter_combinations <- function(order) {
   filter(param_combinations, S == order[1] & K == order[2] & m == order[3])
 }
 
-# Specify the desired order
+#Specify the desired order
 desired_order <- list(
   c(10, 5, 100),
    c(4, 10, 100),
   c(4, 5, 100),
   c(10, 5, 50),
-  c(10, 1, 100),
   c(4, 10, 50),
   c(10, 10, 100),
   c(4, 5, 50),
   c(10, 10, 50),
-  c(4, 1, 100),
   c(10, 1, 50),
   c(10, 5, 10),
   c(4, 1, 50),
@@ -59,7 +57,9 @@ desired_order <- list(
   c(4, 5, 10),
   c(4, 1, 10),
   c(10, 10, 10),
-  c(10, 1, 10)
+  c(10, 1, 10),
+  c(4, 1, 100),
+  c(10, 1, 100)
 )
 
 run_all_sim <- function(params) {
